@@ -16,6 +16,20 @@ namespace TodoApi
             services.AddMvc()
                     .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             // services.AddCors();
+            services.AddCors(
+                options =>
+                options.AddPolicy("AllowCors",
+                builder =>
+                {
+                    builder
+                        .AllowAnyOrigin() // 放行所有的域
+                                          //.WithOrigins('http://localhost', 'http://www.himgloves.com')
+                        .AllowAnyMethod() // 放行所有的方法
+                                          //.WithMethods('GET', 'PUT', 'POST', 'DELETE')
+                        .AllowAnyHeader(); // 放行所有的http头部
+                                           //.WithHeaders("Accept", "Content-type", "Origin", "X-Custion-Header")
+                })
+            );
         }
 
         public void Configure(IApplicationBuilder app)
@@ -33,6 +47,7 @@ namespace TodoApi
             //     options => options
             //         .WithOrigins("http://localhost").AllowAnyMethod()
             // );
+            // app.UseCors("AllowCors"); // 必须放在UseMvc中间件的上面
             app.UseMvc();
         }
     }
