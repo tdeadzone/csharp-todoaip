@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ajax</title>
+</head>
+
+<body>
+    <div>
+        <form>
+            <textarea name="taskContent"></textarea>
+            <br>
+            <label for="unachieve">未完成
+                <input type="radio" value="unachieve" name="task">
+            </label>
+
+            <label for="achieve">已完成
+                <input type="radio" value="achieve" name="task">
+            </label>
+
+            <br>
+            <button type="submit">添加任务</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // let apiurl = 'http://47.95.213.84/api/todo';
+        let apiurl = 'http://localhost:5000/api/todo';
+        let $checkRadio = document.getElementsByName('task');
+        let $submit = document.querySelector("[type='submit']");
+        let $taskContent = document.getElementsByName('taskContent')[0];
+        function xhrMethod(method) {
+            return args => {
+                var
+                    xhr = new XMLHttpRequest();
+                xhr.timeout = 6000;
+                xhr.responseType = args.responseType && args.responseType;
+                xhr.onerror = error => args.errorcallback && args.errorcallback(error);
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4 && xhr.status === 200)
+                        args.successcallback && args.successcallback(xhr.response);
+                }
+                let data = args.data || null;
+                xhr.open(method, args.url, true);
+                if (args.header) xhr.setRequestHeader('Content-type', args.header);
+                xhr.send(data);
+            }
+        }
+        let handlerError = error => console.log(error);
+
+        let AJAX = {};
+        ['GET', 'POST', 'PUT', 'DELETE'].forEach(item => { AJAX[item] = xhrMethod(item) })
+
+        AJAX.GET({
+            url: apiurl,
+            responseType: 'json',
+            errorcallback: handlerError,
+            successcallback: buildResult,
+        })
+
+        function buildResult(data) {
+            let htmlstr = '';
+            data.forEach(item => {
+                htmlstr += `
+                    <p>
+                        <span>${item.name}</span>
+                        <span>${item.isComplete ? "完成" : "未完成"}</span>
+                    </p>
+                `
+            });
+            result.innerHTML = htmlstr;
+        }
+
+        let addTask = evt => {
+            evt.preventDefault();
+            let taskContent = $taskContent.value;
+            if (!taskContent) alert("必须输入任务名称");
+            let isComplete = Array(...$checkRadio)
+                .filter(item => item.checked)[0].value === "achieve";
+            // 如果不上传二进制数据，这种方式很不错
+            let data = {
+                name: taskContent,
+                isComplete: isComplete
+            }
+            AJAX.POST({
+                url: apiurl,
+                data: JSON.stringify(data),
+                header: 'application/json',
+            });
+
+            // 二进制用FormData形式(此处传KEY-VALUE有点大材小用)
+            // public IActionResult Create([FromHeader]TodoItem item)
+            // let fdata = new FormData();
+            // fdata.append("name", taskContent);
+            // fdata.append("isComplete", isComplete);
+            // AJAX.POST({
+            //     url: apiurl,
+            //     data: fdata,
+            //     responseType: 'json'
+            // });
+
+            //  public IActionResult Create([FromForm]TodoItem item)
+            // AJAX.POST({
+            //     url: apiurl,
+            //     responseType: 'json',
+            //     data: "name=kakashi&isComplete=false",
+            //     header: 'application/x-www-form-urlencoded'
+            // });
+        }
+        $submit.addEventListener('click', addTask, false);
+    </script>
+</body>
+
+</html>
